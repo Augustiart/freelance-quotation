@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Freelance Quotation Generator</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<style>
+body{
+  font-family:'Inter',sans-serif;
+  background:radial-gradient(circle at top,#0f0f0f,#020617);
+  min-height:100vh;
+  margin:0;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  padding:20px;
+  color:#e5e7eb;
+}
+
+.card{
+  background:rgba(255,255,255,0.05);
+  backdrop-filter:blur(18px);
+  border:1px solid rgba(255,255,255,0.08);
+  border-radius:20px;
+  padding:40px;
+  width:100%;
+  max-width:420px;
+  box-shadow:0 20px 40px rgba(0,0,0,0.4);
+}
+
+h2{text-align:center;margin-bottom:6px}
+.subtitle{text-align:center;font-size:13px;color:#94a3b8;margin-bottom:24px}
+
+label{display:block;margin-top:14px;font-size:13px;color:#94a3b8}
+
+input,select{
+  width:100%;
+  padding:12px;
+  margin-top:6px;
+  border-radius:12px;
+  border:1px solid #1e293b;
+  background:#020617;
+  color:#fff;
+}
+
+.row{display:flex;gap:30px}
+
+.date{text-align:right;font-size:12px;color:#94a3b8;margin-top:12px}
+
+.project{display:flex;gap:8px;margin-top:10px}
+.qty{max-width:70px}
+
+.btn-outline{
+  margin-top:12px;
+  width:100%;
+  padding:12px;
+  background:none;
+  border:1px dashed #ef4444;
+  border-radius:14px;
+  color:#ef4444;
+  font-weight:600;
+}
+
+.summary{margin-top:20px}
+.summary div{display:flex;justify-content:space-between;margin-top:6px}
+.summary strong{font-size:16px}
+
+.btn-primary{
+  margin-top:22px;
+  width:100%;
+  padding:14px;
+  background:linear-gradient(135deg,#ef4444,#dc2626);
+  border:none;
+  border-radius:16px;
+  color:#fff;
+  font-weight:700;
+}
+
+/* PDF */
+#quotation{
+  width:800px;
+  background:#fff;
+  color:#000;
+  padding:40px;
+  position:absolute;
+  left:-9999px;
+}
+
+.pdf-row{
+  display:flex;
+  justify-content:space-between;
+}
+
+.label{font-size:12px;color:#555}
+.value{font-weight:600}
+
+table{width:100%;border-collapse:collapse;margin-top:20px}
+th,td{border-bottom:1px solid #ddd;padding:8px}
+th{background:#f3f3f3}
+</style>
+</head>
+
+<body>
+
+<div class="card">
+  <h2>Quotation Generator</h2>
+
+  <label>Nama Client</label>
+  <input id="client">
+
+  <label>Nama Freelancer</label>
+  <input id="freelancer">
+
+  <div class="row">
+    <div><label>No. Rekening</label><input id="rekening"></div>
+    <div><label>Nama Bank</label><input id="bank"></div>
+  </div>
+
+  <div class="row">
+    <div>
+      <label>Zona Waktu</label>
+      <select id="tz">
+        <option value="7">WIB</option>
+        <option value="8">WITA</option>
+        <option value="9">WIT</option>
+      </select>
+    </div>
+    <div class="date" id="date"></div>
+  </div>
+
+  <label>Down Payment</label>
+  <select id="dpSelect" onchange="toggleCustomDP()">
+    <option value="10">10%</option>
+    <option value="30">30%</option>
+    <option value="50">50%</option>
+    <option value="custom">Custom</option>
+  </select>
+  <input id="customDP" placeholder="Masukkan % DP" style="display:none">
+
+  <label>Project</label>
+  <div id="projects"></div>
+  <button class="btn-outline" onclick="addProject()">+ Tambah Project</button>
+
+  <div class="summary">
+    <div><span>Subtotal</span><span id="subtotal">Rp 0</span></div>
+    <div><span>Down Payment</span><span id="dpValue">Rp 0</span></div>
+    <div><strong>Total Setelah DP</strong><strong id="finalTotal">Rp 0</strong></div>
+  </div>
+
+  <button class="btn-primary" onclick="downloadPDF()">Download Quotation PDF</button>
+</div>
+
+<div id="quotation">
+  <h1>QUOTATION</h1>
+  <hr>
+
+  <div class="pdf-row">
+    <div>
+      <div class="label">KEPADA:</div>
+      <div class="value" id="pdfClient"></div>
+    </div>
+    <div>
+      <div class="label">Tanggal</div>
+      <div class="value" id="pdfDate"></div>
+    </div>
+  </div>
+
+  <table>
+    <thead>
+      <tr><th>Project</th><th>Qty</th><th>Harga</th><th>Total</th></tr>
+    </thead>
+    <tbody id="pdfProjects"></tbody>
+  </table>
+
+  <p><strong>Subtotal:</strong> <span id="pdfSubtotal"></span></p>
+  <p><strong>Down Payment:</strong> <span id="pdfDP"></span></p>
+  <p><strong>Total Setelah DP:</strong> <span id="pdfFinal"></span></p>
+
+  <hr>
+  <strong id="pdfFreelancer"></strong><br>
+  No. Rekening: <span id="pdfRekening"></span><br>
+  Bank: <span id="pdfBank"></span>
+</div>
+
+<script>
+function addProject(){
+  const d=document.createElement("div");
+  d.className="project";
+  d.innerHTML=`<input placeholder="Nama Project">
+               <input class="qty" type="number" value="1">
+               <input type="number" placeholder="Harga">`;
+  d.querySelectorAll("input").forEach(i=>i.oninput=updateTotal);
+  projects.appendChild(d);
+}
+addProject();
+
+function toggleCustomDP(){
+  customDP.style.display=dpSelect.value==="custom"?"block":"none";
+  updateTotal();
+}
+
+function getDP(){
+  return dpSelect.value==="custom"?Number(customDP.value)||0:Number(dpSelect.value);
+}
+
+function updateTotal(){
+  let subtotal=0;
+  document.querySelectorAll(".project").forEach(p=>{
+    subtotal+=(Number(p.children[1].value)||0)*(Number(p.children[2].value)||0);
+  });
+  const dp=getDP();
+  const dpAmt=subtotal*dp/100;
+  subtotal.innerText="Rp "+subtotal.toLocaleString("id-ID");
+  dpValue.innerText=`Rp ${dpAmt.toLocaleString("id-ID")} (${dp}%)`;
+  finalTotal.innerText="Rp "+(subtotal-dpAmt).toLocaleString("id-ID");
+  return{subtotal,dp,dpAmt,final:subtotal-dpAmt};
+}
+
+function updateDate(){
+  const tzOffset=Number(document.getElementById("tz").value);
+  const now=new Date();
+  const utc=now.getTime()+now.getTimezoneOffset()*60000;
+  const local=new Date(utc+tzOffset*3600000);
+  date.innerText=local.toLocaleString("id-ID");
+}
+setInterval(updateDate,1000);updateDate();
+
+async function downloadPDF(){
+  const c=updateTotal();
+  pdfClient.innerText=client.value;
+  pdfFreelancer.innerText=freelancer.value;
+  pdfRekening.innerText=rekening.value;
+  pdfBank.innerText=bank.value;
+  pdfDate.innerText=date.innerText;
+  pdfProjects.innerHTML="";
+  document.querySelectorAll(".project").forEach(p=>{
+    const q=Number(p.children[1].value)||0;
+    const pr=Number(p.children[2].value)||0;
+    pdfProjects.innerHTML+=`<tr>
+      <td>${p.children[0].value}</td>
+      <td>${q}</td>
+      <td>Rp ${pr.toLocaleString("id-ID")}</td>
+      <td>Rp ${(q*pr).toLocaleString("id-ID")}</td>
+    </tr>`;
+  });
+  pdfSubtotal.innerText="Rp "+c.subtotal.toLocaleString("id-ID");
+  pdfDP.innerText=`Rp ${c.dpAmt.toLocaleString("id-ID")} (${c.dp}%)`;
+  pdfFinal.innerText="Rp "+c.final.toLocaleString("id-ID");
+
+  const canvas=await html2canvas(quotation,{scale:2});
+  const pdf=new jspdf.jsPDF("p","mm","a4");
+  pdf.addImage(canvas.toDataURL("image/png"),"PNG",0,0,210,canvas.height*210/canvas.width);
+  pdf.save("quotation.pdf");
+}
+</script>
+
+</body>
+</html>
