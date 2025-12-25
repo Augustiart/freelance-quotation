@@ -21,7 +21,6 @@ body{
   padding:20px;
   color:#e5e7eb;
 }
-
 .card{
   background:rgba(255,255,255,0.05);
   backdrop-filter:blur(18px);
@@ -30,14 +29,8 @@ body{
   padding:40px;
   width:100%;
   max-width:420px;
-  box-shadow:0 20px 40px rgba(0,0,0,0.4);
 }
-
-h2{text-align:center;margin-bottom:6px}
-.subtitle{text-align:center;font-size:13px;color:#94a3b8;margin-bottom:24px}
-
 label{display:block;margin-top:14px;font-size:13px;color:#94a3b8}
-
 input,select{
   width:100%;
   padding:12px;
@@ -47,14 +40,10 @@ input,select{
   background:#020617;
   color:#fff;
 }
-
-.row{display:flex;gap:30px}
-
-.date{text-align:right;font-size:12px;color:#94a3b8;margin-top:12px}
-
+.row{display:flex;gap:30px;align-items:flex-end}
+.date{font-size:12px;color:#94a3b8;white-space:nowrap;padding-bottom:10px}
 .project{display:flex;gap:8px;margin-top:10px}
 .qty{max-width:70px}
-
 .btn-outline{
   margin-top:12px;
   width:100%;
@@ -65,11 +54,9 @@ input,select{
   color:#ef4444;
   font-weight:600;
 }
-
 .summary{margin-top:20px}
 .summary div{display:flex;justify-content:space-between;margin-top:6px}
 .summary strong{font-size:16px}
-
 .btn-primary{
   margin-top:22px;
   width:100%;
@@ -81,7 +68,7 @@ input,select{
   font-weight:700;
 }
 
-/* PDF */
+/* ===== PDF ===== */
 #quotation{
   width:800px;
   background:#fff;
@@ -90,25 +77,38 @@ input,select{
   position:absolute;
   left:-9999px;
 }
-
-.pdf-row{
-  display:flex;
-  justify-content:space-between;
-}
-
-.label{font-size:12px;color:#555}
-.value{font-weight:600}
-
+.pdf-row{display:flex;justify-content:space-between}
 table{width:100%;border-collapse:collapse;margin-top:20px}
 th,td{border-bottom:1px solid #ddd;padding:8px}
 th{background:#f3f3f3}
+
+/* PDF SUMMARY FIX */
+.pdf-summary{
+  margin-top:20px;
+  display:flex;
+  justify-content:flex-end;
+}
+.pdf-summary-box{
+  width:320px;
+}
+.pdf-summary-box div{
+  display:flex;
+  justify-content:space-between;
+  margin-top:4px;
+  line-height:1.4;
+}
+.pdf-summary-box .total{
+  margin-top:8px;
+  font-size:16px;
+  font-weight:700;
+}
 </style>
 </head>
 
 <body>
 
 <div class="card">
-  <h2>Quotation Generator</h2>
+  <h2 style="text-align:center">Quotation Generator</h2>
 
   <label>Nama Client</label>
   <input id="client">
@@ -122,7 +122,7 @@ th{background:#f3f3f3}
   </div>
 
   <div class="row">
-    <div>
+    <div style="flex:1">
       <label>Zona Waktu</label>
       <select id="tz">
         <option value="7">WIB</option>
@@ -140,7 +140,7 @@ th{background:#f3f3f3}
     <option value="50">50%</option>
     <option value="custom">Custom</option>
   </select>
-  <input id="customDP" placeholder="Masukkan % DP" style="display:none">
+  <input id="customDP" placeholder="Masukkan angka (%)" style="display:none">
 
   <label>Project</label>
   <div id="projects"></div>
@@ -155,18 +155,19 @@ th{background:#f3f3f3}
   <button class="btn-primary" onclick="downloadPDF()">Download Quotation PDF</button>
 </div>
 
+<!-- PDF -->
 <div id="quotation">
   <h1>QUOTATION</h1>
   <hr>
 
   <div class="pdf-row">
     <div>
-      <div class="label">KEPADA:</div>
-      <div class="value" id="pdfClient"></div>
+      <strong>KEPADA:</strong><br>
+      <span id="pdfClient"></span>
     </div>
     <div>
-      <div class="label">Tanggal</div>
-      <div class="value" id="pdfDate"></div>
+      <strong>Tanggal:</strong><br>
+      <span id="pdfDate"></span>
     </div>
   </div>
 
@@ -177,9 +178,23 @@ th{background:#f3f3f3}
     <tbody id="pdfProjects"></tbody>
   </table>
 
-  <p><strong>Subtotal:</strong> <span id="pdfSubtotal"></span></p>
-  <p><strong>Down Payment:</strong> <span id="pdfDP"></span></p>
-  <p><strong>Total Setelah DP:</strong> <span id="pdfFinal"></span></p>
+  <!-- FIXED SUMMARY RIGHT -->
+  <div class="pdf-summary">
+    <div class="pdf-summary-box">
+      <div>
+        <span>Subtotal</span>
+        <span id="pdfSubtotal"></span>
+      </div>
+      <div>
+        <span>Down Payment</span>
+        <span id="pdfDP"></span>
+      </div>
+      <div class="total">
+        <span>Total Setelah DP</span>
+        <span id="pdfFinal"></span>
+      </div>
+    </div>
+  </div>
 
   <hr>
   <strong id="pdfFreelancer"></strong><br>
@@ -188,12 +203,16 @@ th{background:#f3f3f3}
 </div>
 
 <script>
+const projects=document.getElementById("projects");
+
 function addProject(){
   const d=document.createElement("div");
   d.className="project";
-  d.innerHTML=`<input placeholder="Nama Project">
-               <input class="qty" type="number" value="1">
-               <input type="number" placeholder="Harga">`;
+  d.innerHTML=`
+    <input placeholder="Nama Project">
+    <input class="qty" type="number" value="1">
+    <input type="number" placeholder="Harga">
+  `;
   d.querySelectorAll("input").forEach(i=>i.oninput=updateTotal);
   projects.appendChild(d);
 }
@@ -209,20 +228,20 @@ function getDP(){
 }
 
 function updateTotal(){
-  let subtotal=0;
+  let sub=0;
   document.querySelectorAll(".project").forEach(p=>{
-    subtotal+=(Number(p.children[1].value)||0)*(Number(p.children[2].value)||0);
+    sub+=(Number(p.children[1].value)||0)*(Number(p.children[2].value)||0);
   });
   const dp=getDP();
-  const dpAmt=subtotal*dp/100;
-  subtotal.innerText="Rp "+subtotal.toLocaleString("id-ID");
+  const dpAmt=sub*dp/100;
+  subtotal.innerText="Rp "+sub.toLocaleString("id-ID");
   dpValue.innerText=`Rp ${dpAmt.toLocaleString("id-ID")} (${dp}%)`;
-  finalTotal.innerText="Rp "+(subtotal-dpAmt).toLocaleString("id-ID");
-  return{subtotal,dp,dpAmt,final:subtotal-dpAmt};
+  finalTotal.innerText="Rp "+(sub-dpAmt).toLocaleString("id-ID");
+  return{sub,dp,dpAmt,final:sub-dpAmt};
 }
 
 function updateDate(){
-  const tzOffset=Number(document.getElementById("tz").value);
+  const tzOffset=Number(tz.value);
   const now=new Date();
   const utc=now.getTime()+now.getTimezoneOffset()*60000;
   const local=new Date(utc+tzOffset*3600000);
@@ -237,24 +256,29 @@ async function downloadPDF(){
   pdfRekening.innerText=rekening.value;
   pdfBank.innerText=bank.value;
   pdfDate.innerText=date.innerText;
+
   pdfProjects.innerHTML="";
   document.querySelectorAll(".project").forEach(p=>{
     const q=Number(p.children[1].value)||0;
     const pr=Number(p.children[2].value)||0;
-    pdfProjects.innerHTML+=`<tr>
-      <td>${p.children[0].value}</td>
-      <td>${q}</td>
-      <td>Rp ${pr.toLocaleString("id-ID")}</td>
-      <td>Rp ${(q*pr).toLocaleString("id-ID")}</td>
-    </tr>`;
+    pdfProjects.innerHTML+=`
+      <tr>
+        <td>${p.children[0].value}</td>
+        <td>${q}</td>
+        <td>Rp ${pr.toLocaleString("id-ID")}</td>
+        <td>Rp ${(q*pr).toLocaleString("id-ID")}</td>
+      </tr>`;
   });
-  pdfSubtotal.innerText="Rp "+c.subtotal.toLocaleString("id-ID");
+
+  pdfSubtotal.innerText="Rp "+c.sub.toLocaleString("id-ID");
   pdfDP.innerText=`Rp ${c.dpAmt.toLocaleString("id-ID")} (${c.dp}%)`;
   pdfFinal.innerText="Rp "+c.final.toLocaleString("id-ID");
 
   const canvas=await html2canvas(quotation,{scale:2});
   const pdf=new jspdf.jsPDF("p","mm","a4");
-  pdf.addImage(canvas.toDataURL("image/png"),"PNG",0,0,210,canvas.height*210/canvas.width);
+  const w=210;
+  const h=canvas.height*w/canvas.width;
+  pdf.addImage(canvas.toDataURL("image/png"),"PNG",0,0,w,h);
   pdf.save("quotation.pdf");
 }
 </script>
